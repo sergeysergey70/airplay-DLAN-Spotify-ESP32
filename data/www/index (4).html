@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Setup</title>
+    <style>
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            background-color: #000000;
+            color: #fff;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        input[type=text], input[type=password] {
+            width: 100%;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        input::placeholder {
+            color: #8a8a8a;
+            text-align: center;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #d4af6a;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            margin-top: 14px;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .btn-gold {
+            background: #d4af6a;
+            color: #000;
+        }
+
+        .btn-gold:hover {
+            background: #e0bd7e;
+        }
+
+        .btn-dark {
+            background: rgba(255, 255, 255, 0.08);
+            color: #d4af6a;
+        }
+
+        .btn-dark:hover {
+            background: rgba(255, 255, 255, 0.14);
+        }
+
+        .msg {
+            margin-top: 12px;
+            font-size: 13px;
+            text-align: center;
+            color: #d4af6a;
+        }
+
+        .msg.err {
+            color: #e05a5a;
+        }
+
+        .group {
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 48px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="group">
+        <input type="text" id="wifi-ssid" placeholder="Название сети">
+        <input type="password" id="wifi-pass" placeholder="Пароль" style="margin-top:12px">
+        <button class="btn btn-gold" onclick="saveWiFi()">Подключить</button>
+        <div id="wifi-msg"></div>
+    </div>
+
+    <div class="group">
+        <input type="text" id="dev-name" value="AirPlay B&amp;O">
+        <button class="btn btn-dark" onclick="saveName()">Сохранить</button>
+        <div id="name-msg"></div>
+    </div>
+
+    <script>
+        function msg(id, txt, type) {
+            var e = document.getElementById(id);
+            if (e) {
+                e.innerHTML = txt;
+                e.className = type === 'err' ? 'msg err' : 'msg';
+                setTimeout(function() { e.innerHTML = ''; }, 4000);
+            }
+        }
+
+        async function saveWiFi() {
+            var s = document.getElementById('wifi-ssid').value.trim();
+            var p = document.getElementById('wifi-pass').value;
+            if (!s) { msg('wifi-msg', 'Введите название сети', 'err'); return; }
+            try {
+                var r = await fetch('/api/wifi/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ssid: s, password: p})
+                });
+                var d = await r.json();
+                if (d.success) { msg('wifi-msg', 'Сохранено, перезагрузка...'); }
+                else { msg('wifi-msg', d.error || 'Ошибка', 'err'); }
+            } catch (e) { msg('wifi-msg', 'Ошибка соединения', 'err'); }
+        }
+
+        async function saveName() {
+            var n = document.getElementById('dev-name').value.trim();
+            if (!n) { msg('name-msg', 'Введите название', 'err'); return; }
+            try {
+                var r = await fetch('/api/device/name', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: n})
+                });
+                var d = await r.json();
+                if (d.success) { msg('name-msg', 'Сохранено'); }
+                else { msg('name-msg', d.error || 'Ошибка', 'err'); }
+            } catch (e) { msg('name-msg', 'Ошибка соединения', 'err'); }
+        }
+    </script>
+</body>
+</html>
